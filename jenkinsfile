@@ -1,0 +1,24 @@
+node{
+    def mavenhome=tool name :"maven3.8.1"
+    stage("checkout code") {
+        git branch: 'developement', credentialsId: '4f41c90e-ec71-4bc4-afb8-4dffeb1a3cbc', url: 'https://github.com/swethasoftwaresolutions/Maven-web-application.git'
+        
+    }
+    stage("Build") {
+        sh "${mavenhome}/bin/mvn clean package"
+    }
+    stage("execute sonarqube report") {
+        sh "${mavenhome}/bin/mvn sonar:sonar"
+    }
+    stage("upload artifact to nexus") {
+        sh "${mavenhome}/bin/mvn deploy"
+    }
+    stage("deploy application in to the Tomcat server") {
+      sshagent(['83faee7e-788a-47cb-b4b3-fd25007ae263']) {
+    sh "scp -o  StrictHostKeyChecking=no target/maven-web-application.war ec2-user@35.154.77.95:/opt/apache-tomcat-9.0.50/webapps"
+}  
+    }
+}
+emailext body: '''build over
+Regards
+swetha''', subject: 'build over', to: 'krishna2a4@gmail.com,swethareddy237@gmail.com'
